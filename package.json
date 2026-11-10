@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "debug": "node --inspect node_modules/next/dist/bin/next dev",
     "dev:backend": "npm --prefix server run dev",
     "dev:server": "npm --prefix server run dev",
     "dev:all": "npx concurrently \"npm run dev\" \"npm run dev:backend\"",

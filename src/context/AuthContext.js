@@ -30,20 +30,120 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
-  const loginWithGoogle = useCallback(async () => {
-    try {
-      const data = await authApi.loginWithGoogle();
-      if (data?.token) setToken(data.token);
-      const u = data?.user || { id: 999, name: "Google User", email: "user@gmail.com", role: "customer" };
-      setUser(u);
-      return data;
-    } catch {
-      // Offline fallback
-      const fallbackUser = { id: 999, name: "Google User", email: "user@gmail.com", role: "customer" };
-      setToken("google_jwt_shoe_king");
-      setUser(fallbackUser);
-      return { token: "google_jwt_shoe_king", user: fallbackUser };
-    }
+  /**
+   * Google Sign-In:
+   * 1. If NEXT_PUBLIC_GOOGLE_CLIENT_ID is configured, opens Google's official account picker popup.
+   * 2. If not yet configured, prompts the user for their Google email so testing can proceed seamlessly.
+   */
+  const loginWithGoogle = useCallback((customPayload) => {
+    return new Promise((resolve, reject) => {
+      // If custom payload (e.g. email/name) was directly passed:
+      if (customPayload?.email) {
+        authApi.loginWithGoogle(customPayload)
+          .then((data) => {
+            if (data?.token) setToken(data.token);
+            const u = data?.user || {
+              id: 999,
+              name: customPayload.name || customPayload.email.split("@")[0],
+              email: customPayload.email,
+              role: "customer"
+            };
+            setUser(u);
+            resolve(data);
+          })
+          .catch(reject);
+        return;
+      }
+
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+      // Real Google Identity Services (GIS) flow
+      if (
+        clientId &&
+        clientId !== "YOUR_GOOGLE_CLIENT_ID_HERE" &&
+        typeof window !== "undefined" &&
+        window.google?.accounts?.oauth2
+      ) {
+        try {
+          const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: "email profile openid",
+            callback: async (tokenResponse) => {
+              if (tokenResponse.error) {
+                reject(new Error(tokenResponse.error_description || tokenResponse.error));
+                return;
+              }
+
+              try {
+                const profileRes = await fetch(
+                  "https://www.googleapis.com/oauth2/v3/userinfo",
+                  { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+                );
+                const profile = await profileRes.json();
+
+                const data = await authApi.loginWithGoogle({
+                  email: profile.email,
+                  name: profile.name,
+                  picture: profile.picture,
+                  googleId: profile.sub,
+                });
+
+                if (data?.token) setToken(data.token);
+                const u = data?.user || {
+                  id: 999,
+                  name: profile.name,
+                  email: profile.email,
+                  picture: profile.picture,
+                  role: "customer",
+                };
+                setUser(u);
+                resolve(data);
+              } catch (err) {
+                reject(err);
+              }
+            },
+          });
+
+          // Opens Google's account selection popup
+          client.requestAccessToken({ prompt: "select_account" });
+          return;
+        } catch (err) {
+          console.error("GIS initialization failed, falling back:", err);
+        }
+      }
+
+      // Fallback if NEXT_PUBLIC_GOOGLE_CLIENT_ID is not configured yet
+      if (typeof window !== "undefined") {
+        const inputEmail = window.prompt(
+          "Enter your Google Email address to sign in with Google:\n(To enable automatic Google account picker popup, set NEXT_PUBLIC_GOOGLE_CLIENT_ID in .env.local)",
+          "user@gmail.com"
+        );
+
+        if (!inputEmail) {
+          reject(new Error("Google sign-in was cancelled."));
+          return;
+        }
+
+        authApi.loginWithGoogle({
+          email: inputEmail,
+          name: inputEmail.split("@")[0],
+        })
+          .then((data) => {
+            if (data?.token) setToken(data.token);
+            const u = data?.user || {
+              id: 999,
+              name: inputEmail.split("@")[0],
+              email: inputEmail,
+              role: "customer"
+            };
+            setUser(u);
+            resolve(data);
+          })
+          .catch(reject);
+      } else {
+        reject(new Error("Window is not available."));
+      }
+    });
   }, []);
 
   const register = useCallback(async (name, email, password) => {

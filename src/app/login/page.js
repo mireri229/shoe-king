@@ -2,7 +2,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Crown, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, X, Check } from "lucide-react";
+import { Crown, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import styles from "./page.module.css";
 
@@ -17,15 +17,7 @@ function LoginContent() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Google modal state
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [customGoogleEmail, setCustomGoogleEmail] = useState("");
-
-  const suggestedGoogleAccounts = [
-    { name: "Personal Account", email: "user.personal@gmail.com" },
-    { name: "Shoe King VIP", email: "james.k@gmail.com" },
-  ];
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -43,20 +35,16 @@ function LoginContent() {
     }
   };
 
-  const handleSelectGoogleAccount = async (selectedEmail, selectedName) => {
+  const handleGoogleSignIn = async () => {
     setError("");
-    setLoading(true);
-    setShowGoogleModal(false);
+    setGoogleLoading(true);
     try {
-      await loginWithGoogle({
-        email: selectedEmail,
-        name: selectedName || selectedEmail.split("@")[0],
-      });
+      await loginWithGoogle();
       router.push(redirectUrl);
     } catch (err) {
-      setError(err.message || "Google sign-in failed. Please try again.");
+      setError(err.message || "Failed to sign in with Google. Please check your connection.");
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -107,19 +95,13 @@ function LoginContent() {
         <div className={styles.socials}>
           <button
             type="button"
-            onClick={() => setShowGoogleModal(true)}
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
             className={`btn btn-outline ${styles.socialBtn}`}
+            style={{ width: "100%", justifyContent: "center" }}
           >
             <img src="https://www.google.com/favicon.ico" width={16} alt="Google" />
-            Continue with Google
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSelectGoogleAccount("apple.user@icloud.com", "Apple User")}
-            className={`btn btn-outline ${styles.socialBtn}`}
-          >
-            <img src="https://www.apple.com/favicon.ico" width={16} alt="Apple" />
-            Continue with Apple
+            {googleLoading ? "Connecting to Google..." : "Continue with Google"}
           </button>
         </div>
 
@@ -218,101 +200,6 @@ function LoginContent() {
           <Link href="/register" className={styles.link}>Create one free →</Link>
         </p>
       </div>
-
-      {/* Google Account Picker Modal */}
-      {showGoogleModal && (
-        <>
-          <div className="overlay" onClick={() => setShowGoogleModal(false)} />
-          <div style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 16,
-            padding: 28,
-            width: "90%",
-            maxWidth: 420,
-            zIndex: 1000,
-            boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <img src="https://www.google.com/favicon.ico" width={20} alt="Google" />
-                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Sign in with Google</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleModal(false)}
-                className="btn btn-icon btn-ghost"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 16 }}>
-              Choose an existing Google email or enter a new one to sign in to Shoe King:
-            </p>
-
-            {/* List of accounts */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              {suggestedGoogleAccounts.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  onClick={() => handleSelectGoogleAccount(acc.email, acc.name)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    background: "var(--surface-2)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    textAlign: "left",
-                    color: "var(--text)",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{acc.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{acc.email}</div>
-                  </div>
-                  <Check size={16} color="var(--gold-400)" />
-                </button>
-              ))}
-            </div>
-
-            {/* Custom Google Email Input */}
-            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6, display: "block" }}>
-                Or enter your Google Email:
-              </label>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  type="email"
-                  placeholder="name@gmail.com"
-                  className="input"
-                  value={customGoogleEmail}
-                  onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => {
-                    if (customGoogleEmail && customGoogleEmail.includes("@")) {
-                      handleSelectGoogleAccount(customGoogleEmail);
-                    }
-                  }}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
 
       {/* Background decor */}
       <div className={styles.bgOrb1} />

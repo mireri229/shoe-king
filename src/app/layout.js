@@ -1,4 +1,5 @@
 import { Outfit, Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
@@ -29,6 +30,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        {/* Google Identity Services — loads the google.accounts.id API */}
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className={`${outfit.variable} ${inter.variable}`}>
         <AuthProvider>
           <CartProvider>
