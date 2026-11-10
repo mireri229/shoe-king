@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { products } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 import ProductCard from "@/components/ui/ProductCard";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,6 +18,8 @@ export default function ProductDetailPage() {
   const params = useParams();
   const product = products.find((p) => p.id === Number(params.id));
 
+  const router = useRouter();
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const { toggle, isWishlisted } = useWishlist();
 
@@ -40,6 +43,10 @@ export default function ProductDetailPage() {
   const related = products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4);
 
   const handleAddToCart = () => {
+    if (!user) {
+      router.push(`/login?redirect=/product/${product.id}&reason=shop`);
+      return;
+    }
     if (!selectedSize) {
       setSizeError(true);
       setTimeout(() => setSizeError(false), 2000);

@@ -4,15 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:backend": "npm --prefix server run dev",
+    "dev:server": "npm --prefix server run dev",
+    "dev:all": "npx concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.9",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^0.378.0",
     "next": "14.2.3",
     "react": "^18",
-    "react-dom": "^18",
-    "lucide-react": "^0.378.0"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "eslint": "^8",

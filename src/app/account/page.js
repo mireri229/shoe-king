@@ -68,7 +68,7 @@ export default function AccountPage() {
                         <span className={styles.orderProduct}>{order.product}</span>
                         <span className={styles.orderDate}>{order.date} · {order.items} item{order.items > 1 ? "s" : ""}</span>
                       </div>
-                      <div className={styles.orderRight}>
+                        <div className={styles.orderRight}>
                         <span className={`${styles.orderStatus} ${order.status === "Delivered" ? styles.statusDelivered : styles.statusTransit}`}>
                           {order.status}
                         </span>

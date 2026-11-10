@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { CartProvider } from "../context/CartContext";
 import { WishlistProvider } from "../context/WishlistContext";
+import { AuthProvider } from "../context/AuthContext";
 import CartDrawer from "../components/layout/CartDrawer";
 
 const outfit = Outfit({
@@ -29,14 +30,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${inter.variable}`}>
-        <CartProvider>
-          <WishlistProvider>
-            <Navbar />
-            <CartDrawer />
-            <main>{children}</main>
-            <Footer />
-          </WishlistProvider>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <Navbar />
+              <CartDrawer />
+              <main>{children}</main>
+              <Footer />
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

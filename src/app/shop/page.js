@@ -1,12 +1,15 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { products, categories, genders, sortOptions } from "@/data/products";
 import ProductCard from "@/components/ui/ProductCard";
-import { SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { SlidersHorizontal, X, ChevronDown, Lock, Crown, ArrowRight } from "lucide-react";
 import styles from "./page.module.css";
 
-export default function ShopPage() {
+function ShopContent() {
+  const { user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const initCategory = searchParams.get("category") || "All";
   const initGender = searchParams.get("gender") || "All";
@@ -47,6 +50,46 @@ export default function ShopPage() {
   };
 
   const hasActiveFilters = selectedCategory !== "All" || selectedGender !== "All" || onSaleOnly || search || priceRange[1] < 400;
+
+  if (!authLoading && !user) {
+    return (
+      <div className={styles.page}>
+        <div className="container" style={{ maxWidth: 540, textAlign: "center", padding: "80px 20px" }}>
+          <div style={{
+            display: "inline-flex",
+            padding: 20,
+            borderRadius: "50%",
+            background: "rgba(201,168,76,0.1)",
+            marginBottom: 20,
+          }}>
+            <Lock size={48} color="var(--gold-400)" />
+          </div>
+          <h1 style={{ fontSize: "2.2rem", fontWeight: 800, marginBottom: 12 }}>
+            Sign In <span className="gold-gradient-text">Required</span>
+          </h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "1.1rem", lineHeight: 1.6, marginBottom: 28 }}>
+            Please sign in to access the Shoe King store, explore collections, and make purchases.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <Link
+              href="/login?redirect=/shop&reason=shop"
+              className="btn btn-primary btn-lg"
+              style={{ justifyContent: "center" }}
+            >
+              Sign In to Shop <ArrowRight size={18} />
+            </Link>
+            <Link
+              href="/register"
+              className="btn btn-outline"
+              style={{ justifyContent: "center" }}
+            >
+              Don&apos;t have an account? Create one free
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -225,5 +268,13 @@ export default function ShopPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<div className="container" style={{ padding: "80px 0", textAlign: "center" }}>Loading Shop...</div>}>
+      <ShopContent />
+    </Suspense>
   );
 }
